@@ -53,3 +53,20 @@ sns.barplot(x='season', y='risk', data=df1, palette={'winter':'#1f77b4','spring'
 plt.title("Average Risk-taking Behaviour by Season")
 plt.xlabel("Season"); plt.ylabel("Proportion of Risk-taking")
 plt.show()
+
+# 2️⃣ Delay before food by season
+plt.figure(figsize=(7,5))
+sns.boxplot(x='season', y='bat_landing_to_food', data=df1, palette={'winter':'#66c2a5','spring':'#fc8d62'})
+plt.title("Delay Before Approaching Food by Season")
+plt.xlabel("Season"); plt.ylabel("Delay to Food (seconds)")
+plt.show()
+
+# 3️⃣ Line Graph – Average Rat Arrivals & Bat Landings per Month
+plt.figure(figsize=(8,5))
+monthly = df2.groupby('month')[['rat_arrival_number','bat_landing_number']].mean().reset_index()
+sns.lineplot(x='month', y='rat_arrival_number', data=monthly, label='Rat Arrivals', color='red', marker='o')
+sns.lineplot(x='month', y='bat_landing_number', data=monthly, label='Bat Landings', color='blue', marker='o')
+plt.title("Monthly Trend: Rat Arrivals vs Bat Landings")
+plt.xlabel("Month"); plt.ylabel("Average Count"); plt.legend()
+plt.show()
+
