@@ -88,3 +88,25 @@ plt.ylabel("Mean Bat Landings (per 30 mins)")
 plt.xlabel("Month")
 plt.show()
 
+# ----------------------------------------------------------
+# STEP 4: Inferential Statistics
+# ----------------------------------------------------------
+
+# Two-sample t-test (delay)
+delay_winter = df1[df1['season']=='0']['bat_landing_to_food']
+delay_spring = df1[df1['season']=='1']['bat_landing_to_food']
+t_stat, p_val = stats.ttest_ind(delay_spring, delay_winter, equal_var=False)
+print("T-test: Delay to food (Winter vs Spring)")
+print("t-statistic:", round(t_stat,3), " | p-value:", round(p_val,5), "\n")
+
+# Proportion test (risk-taking)
+winter_risk = df1[df1['season']=='Winter']['risk']
+spring_risk = df1[df1['season']=='Spring']['risk']
+count_winter, n_winter = winter_risk.sum(), len(winter_risk)
+count_spring, n_spring = spring_risk.sum(), len(spring_risk)
+
+ci_winter = proportion.proportion_confint(count_winter, n_winter, alpha=0.05, method='normal')
+ci_spring = proportion.proportion_confint(count_spring, n_spring, alpha=0.05, method='normal')
+print("95% CI for Risk-taking:")
+print("Winter:", ci_winter)
+print("Spring:", ci_spring, "\n")
