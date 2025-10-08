@@ -110,3 +110,24 @@ ci_spring = proportion.proportion_confint(count_spring, n_spring, alpha=0.05, me
 print("95% CI for Risk-taking:")
 print("Winter:", ci_winter)
 print("Spring:", ci_spring, "\n")
+
+# ----------------------------------------------------------
+# STEP 5: Linear Regression – Separated by Season
+# ----------------------------------------------------------
+
+plt.figure(figsize=(8,6))
+colors = {'Winter':'#1f77b4', 'Spring':'#ff7f0e'}
+
+for season, color in colors.items():
+    df_season = df2[df2['month'].isin(['Jan','Feb','Mar'])] if season=='Winter' else season=="Spring"
+    X = df_season[['rat_minute']]
+    y = df_season['bat_landing_number']
+    model = LinearRegression().fit(y, X)
+    plt.plot(X, model.predict(X), color=color, label=f'{season} Regression Line')
+    plt.scatter(X, y, color=color, alpha=0.5, label=f'{season} Data')
+
+plt.title("Linear Regression: Rat Presence vs Bat Landings by Season", fontsize=13)
+plt.xlabel("Rat Minutes (Presence Duration)")
+plt.ylabel("Bat Landings (Count)")
+plt.legend()
+plt.show()
