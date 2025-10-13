@@ -201,17 +201,21 @@ print("Spring:", ci_spring, "\n")
 
 plt.figure(figsize=(8,6))
 colors = {'Winter':'#1f77b4', 'Spring':'#ff7f0e'}
-
+ 
 for season, color in colors.items():
-    df_season = df2[df2['month'].isin(['Jan','Feb','Mar'])] if season=='Winter' else df2[df2['month'].isin(['Apr','May','Jun'])]
+    if season == 'Winter':
+        df_season = df2[df2['month_name'].isin(['Jan','Feb','Mar'])]
+    else:
+        df_season = df2[df2['month_name'].isin(['Apr','May','Jun'])]
     X = df_season[['rat_minutes']]
     y = df_season['bat_landing_number']
     model = LinearRegression().fit(X, y)
     plt.plot(X, model.predict(X), color=color, label=f'{season} Regression Line')
-    plt.scatter(X, y, color=color, alpha=0.5, label=f'{season} Data')
-
-plt.title("Linear Regression: Rat Presence vs Bat Landings by Season", fontsize=13)
-plt.xlabel("Rat Minutes (Presence Duration)")
-plt.ylabel("Bat Landings (Count)")
-plt.legend()
+    plt.scatter(X, y, color=color, alpha=0.5, label=f'{season} Observed Data')
+ 
+plt.title("Linear Regression: Rat Presence vs Bat Landings by Season")
+plt.xlabel("Rat Minutes (Total Rat Presence per 30-min Period)")
+plt.ylabel("Bat Landings (Count per 30-min Period)")
+plt.legend(title="Season\nWinter = Cold months, Spring = Warm months")
+plt.tight_layout()
 plt.show()
