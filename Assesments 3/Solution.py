@@ -1,76 +1,131 @@
-# ==========================================================
-# Investigation B: Seasonal Behaviour Changes in Bats (Improved Visuals)
-# ==========================================================
+# ============================================================
+# HIT140 – Foundations of Data Science
+# Assessment 3 
+# ============================================================
 
 import os
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from scipy import stats
 from statsmodels.stats import proportion
-from sklearn.linear_model import LinearRegression
+import statsmodels.api as sm
 
-# ----------------------------------------------------------
-# STEP 1: Load and Prepare Data
-# ----------------------------------------------------------
-
+# ------------------------------------------------------------
+# STEP 1: Load Datasets
+# ------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "../Datasets")
+df1_path = os.path.join(DATA_DIR, "dataset1.csv")
+df2_path = os.path.join(DATA_DIR, "dataset2.csv")
 
-df1 = pd.read_csv(os.path.join(DATA_DIR, "dataset1.csv"))
-df2 = pd.read_csv(os.path.join(DATA_DIR, "dataset2.csv"))
+df1 = pd.read_csv(df1_path)
+df2 = pd.read_csv(df2_path)
 
-# Convert columns to proper datatypes
+# ------------------------------------------------------------
+# STEP 2: Data Cleaning and Preparation
+# ------------------------------------------------------------
+# Convert timestamps
 for col in ['start_time', 'rat_period_start', 'rat_period_end', 'sunset_time']:
-    df1[col] = pd.to_datetime(df1[col], errors='coerce')
+    df1[col] = pd.to_datetime(df1[col], errors='coerce', dayfirst=True)
 for col in ['time']:
-    df2[col] = pd.to_datetime(df2[col], errors='coerce')
+    df2[col] = pd.to_datetime(df2[col], errors='coerce', dayfirst=True)
 
-df1[['bat_landing_to_food','hours_after_sunset','seconds_after_rat_arrival']] = df1[['bat_landing_to_food','hours_after_sunset','seconds_after_rat_arrival']].astype(float)
-df2[['hours_after_sunset','bat_landing_number','food_availability','rat_minutes','rat_arrival_number']] = df2[['hours_after_sunset','bat_landing_number','food_availability','rat_minutes','rat_arrival_number']].astype(float)
+# Convert numerics
+df1[['bat_landing_to_food','hours_after_sunset','seconds_after_rat_arrival']] = \
+    df1[['bat_landing_to_food','hours_after_sunset','seconds_after_rat_arrival']].astype(float)
+df2[['hours_after_sunset','bat_landing_number','food_availability','rat_minutes','rat_arrival_number']] = \
+    df2[['hours_after_sunset','bat_landing_number','food_availability','rat_minutes','rat_arrival_number']].astype(float)
 
 df1.dropna(inplace=True)
 df2.dropna(inplace=True)
 
-# Replace numeric season with labels
-df1['season'] = df1['season'].replace({0:'Winter', 1:'Spring'})
+# Replace numeric season labels if present
+df1['season'] = df1['season'].replace({0: 'Winter', 1: 'Spring'})
 
-# Map months (1–6) to names for legend clarity
-month_map = {0:'Dec', 1:'Jan', 2:'Feb', 3:'Mar', 4:'Apr', 5:'May', 6:'Jun'}
-df2['month'] = df2['month'].replace(month_map)
+# Month mapping
+month_map = {0:'Dec',1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun'}
+df2['month_name'] = df2['month'].replace(month_map)
 
-# ----------------------------------------------------------
-# STEP 2: Descriptive Statistics
-# ----------------------------------------------------------
-
-print("==== Descriptive Statistics by Season ====")
-print(df1.groupby('season')['risk'].mean())
-print(df1.groupby('season')['bat_landing_to_food'].mean())
-print(df2.groupby('month')[['rat_arrival_number','bat_landing_number']].mean())
-print("==========================================\n")
-
-# ----------------------------------------------------------
-# STEP 3: Visual Analysis
-# ----------------------------------------------------------
+# Assign seasons for df2
+def assign_season(month):
+    if month in [0,1,2,3]:
+        return 'Winter'
+    elif month in [4,5,6]:
+        return 'Spring'
+    else:
+        return 'Unknown'
+df2['season'] = df2['month'].apply(assign_season)
 
 sns.set_style("whitegrid")
 
-# Risk-taking by season
+# ============================================================
+# INVESTIGATION A – Bat Behaviour and Rat Influence
+# ============================================================
+print("\n--- Investigation A: Behavioural Analysis ---")
+
+X_A = df1[['risk', 'reward', 'seconds_after_rat_arrival']]
+y_A = df1['bat_landing_to_food']
+X_A_const = sm.add_constant(X_A)
+modelA = sm.OLS(y_A, X_A_const).fit()
+print(modelA.summary())
+
+# --- Train/Test split for evaluation
+X_train, X_test, y_train, y_test = train_test_split(X_A, y_A, test_size=0.3, random_state=42)
+lr = LinearRegression().fit(X_train, y_train)
+y_pred = lr.predict(X_test)
+
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+nrmse = rmse / (y_test.max() - y_test.min())
+r2 = r2_score(y_test, y_pred)
+print("\n--- Model Evaluation Metrics ---")
+print(f"MAE: {mae:.3f} | MSE: {mse:.3f} | RMSE: {rmse:.3f} | NRMSE: {nrmse:.3f} | R²: {r2:.3f}")
+
+# --- Multicollinearity (VIF)
+vif = pd.DataFrame({
+    "Variable": X_A.columns,
+    "VIF": [variance_inflation_factor(X_A.values, i) for i in range(X_A.shape[1])]
+})
+print("\n--- Variance Inflation Factor (VIF) ---")
+print(vif)
+
+# --- Feature importance
+importance = pd.DataFrame({
+    'Variable': X_A_const.columns,
+    'Coefficient': modelA.params
+}).sort_values(by='Coefficient', ascending=False)
+print("\n--- Feature Importance ---")
+print(importance)
+
+# --- Assumption checks (Residuals)
+fitted_values = modelA.predict(X_A_const)
+residuals = y_A - fitted_values
+
 plt.figure(figsize=(7,5))
-sns.barplot(x='season', y='risk', data=df1, palette=['#1f77b4', '#ff7f0e'])
-plt.title("Average Risk-taking Behaviour by Season", fontsize=13)
-plt.ylabel("Proportion of Risk-taking")
-plt.xlabel("Season")
+sns.scatterplot(x=fitted_values, y=residuals, alpha=0.6)
+plt.axhline(0, color='red', linestyle='--', label='Zero Residual Line')
+plt.title("Residuals vs Fitted Values (Linearity & Homoscedasticity)")
+plt.xlabel("Predicted Feeding Delay (seconds)")
+plt.ylabel("Residuals (Actual - Predicted)")
+plt.legend()
+plt.tight_layout()
 plt.show()
 
-# Delay before food
 plt.figure(figsize=(7,5))
-sns.boxplot(x='season', y='bat_landing_to_food', data=df1, palette=['#66c2a5', '#fc8d62'])
-plt.title("Bat Delay Before Approaching Food by Season", fontsize=13)
-plt.ylabel("Delay to Food (seconds)")
-plt.xlabel("Season")
+sns.histplot(residuals, kde=True, color='#ff7f0e')
+plt.title("Residual Distribution (Checking Normality)")
+plt.xlabel("Residual Value (seconds)")
+plt.ylabel("Frequency")
+plt.tight_layout()
 plt.show()
+
 
 # Rat arrivals by month
 plt.figure(figsize=(7,5))
