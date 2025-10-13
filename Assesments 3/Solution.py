@@ -126,22 +126,51 @@ plt.ylabel("Frequency")
 plt.tight_layout()
 plt.show()
 
-
-# Rat arrivals by month
+# ============================================================
+# INVESTIGATION B – Seasonal Comparison
+# ============================================================
+print("\n--- Investigation B: Seasonal Comparison ---")
+ 
+# --- Descriptive statistics
+print("==== Descriptive Statistics by Season ====")
+print(df1.groupby('season')['risk'].mean())
+print(df1.groupby('season')['bat_landing_to_food'].mean())
+print(df2.groupby('month_name')[['rat_arrival_number', 'bat_landing_number']].mean())
+print("==========================================\n")
+ 
+# --- Seasonal visuals
 plt.figure(figsize=(7,5))
-sns.barplot(x='month', y='rat_arrival_number', data=df2, palette='coolwarm')
-plt.title("Average Rat Arrivals per Month", fontsize=13)
+sns.barplot(x='season', y='risk', data=df1, palette={'Winter':'#1f77b4','Spring':'#ff7f0e'})
+plt.title("Average Risk-taking Behaviour by Season")
+plt.xlabel("Season (Winter = fewer rats, Spring = more rats)")
+plt.ylabel("Mean Risk-taking (proportion)")
+plt.tight_layout()
+plt.show()
+ 
+plt.figure(figsize=(7,5))
+sns.boxplot(x='season', y='bat_landing_to_food', data=df1, palette={'Winter':'#66c2a5','Spring':'#fc8d62'})
+plt.title("Bat Delay Before Approaching Food by Season")
+plt.xlabel("Season")
+plt.ylabel("Delay Between Landing and Feeding (seconds)")
+plt.tight_layout()
+plt.show()
+ 
+plt.figure(figsize=(8,5))
+sns.barplot(x='month_name', y='rat_arrival_number', data=df2, palette='coolwarm')
+plt.title("Average Rat Arrivals per Month")
+plt.xlabel("Month")
 plt.ylabel("Mean Rat Arrivals (per 30 mins)")
-plt.xlabel("Month")
+plt.tight_layout()
 plt.show()
-
-# Bat landings by month
-plt.figure(figsize=(7,5))
-sns.barplot(x='month', y='bat_landing_number', data=df2, palette='viridis')
-plt.title("Average Bat Landings per Month", fontsize=13)
+ 
+plt.figure(figsize=(8,5))
+sns.barplot(x='month_name', y='bat_landing_number', data=df2, palette='viridis')
+plt.title("Average Bat Landings per Month")
+plt.xlabel("Month")
 plt.ylabel("Mean Bat Landings (per 30 mins)")
-plt.xlabel("Month")
+plt.tight_layout()
 plt.show()
+ 
 
 # ----------------------------------------------------------
 # STEP 4: Inferential Statistics
