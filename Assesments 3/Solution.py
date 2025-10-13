@@ -172,50 +172,19 @@ plt.tight_layout()
 plt.show()
  
 
-# ----------------------------------------------------------
-# STEP 4: Inferential Statistics
-# ----------------------------------------------------------
-
-# Two-sample t-test (delay)
-delay_winter = df1[df1['season']=='0']['bat_landing_to_food']
-delay_spring = df1[df1['season']=='1']['bat_landing_to_food']
-t_stat, p_val = stats.ttest_ind(delay_spring, delay_winter, equal_var=False)
+# --- Inferential tests
+delay_winter = df1[df1['season']=='Winter']['bat_landing_to_food']
+delay_spring = df1[df1['season']=='Spring']['bat_landing_to_food']
+t_stat, p_val = stats.ttest_ind(delay_winter, delay_spring, equal_var=False)
 print("T-test: Delay to food (Winter vs Spring)")
-print("t-statistic:", round(t_stat,3), " | p-value:", round(p_val,5), "\n")
-
-# Proportion test (risk-taking)
+print(f"t-statistic: {t_stat:.3f} | p-value: {p_val:.5f}\n")
+ 
 winter_risk = df1[df1['season']=='Winter']['risk']
 spring_risk = df1[df1['season']=='Spring']['risk']
 count_winter, n_winter = winter_risk.sum(), len(winter_risk)
 count_spring, n_spring = spring_risk.sum(), len(spring_risk)
-
 ci_winter = proportion.proportion_confint(count_winter, n_winter, alpha=0.05, method='normal')
 ci_spring = proportion.proportion_confint(count_spring, n_spring, alpha=0.05, method='normal')
-print("95% CI for Risk-taking:")
+print("95% Confidence Interval for Risk-taking:")
 print("Winter:", ci_winter)
 print("Spring:", ci_spring, "\n")
-
-# ----------------------------------------------------------
-# STEP 5: Linear Regression – Separated by Season
-# ----------------------------------------------------------
-
-plt.figure(figsize=(8,6))
-colors = {'Winter':'#1f77b4', 'Spring':'#ff7f0e'}
- 
-for season, color in colors.items():
-    if season == 'Winter':
-        df_season = df2[df2['month_name'].isin(['Jan','Feb','Mar'])]
-    else:
-        df_season = df2[df2['month_name'].isin(['Apr','May','Jun'])]
-    X = df_season[['rat_minutes']]
-    y = df_season['bat_landing_number']
-    model = LinearRegression().fit(X, y)
-    plt.plot(X, model.predict(X), color=color, label=f'{season} Regression Line')
-    plt.scatter(X, y, color=color, alpha=0.5, label=f'{season} Observed Data')
- 
-plt.title("Linear Regression: Rat Presence vs Bat Landings by Season")
-plt.xlabel("Rat Minutes (Total Rat Presence per 30-min Period)")
-plt.ylabel("Bat Landings (Count per 30-min Period)")
-plt.legend(title="Season\nWinter = Cold months, Spring = Warm months")
-plt.tight_layout()
-plt.show()
