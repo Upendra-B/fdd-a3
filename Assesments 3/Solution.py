@@ -1,6 +1,6 @@
 # ============================================================
 # HIT140 – Foundations of Data Science
-# Assessment 3 
+# Assessment 3 | Linear Regression – Investigation A & B
 # ============================================================
 
 import os
@@ -130,47 +130,50 @@ plt.show()
 # INVESTIGATION B – Seasonal Comparison
 # ============================================================
 print("\n--- Investigation B: Seasonal Comparison ---")
- 
+
 # --- Descriptive statistics
 print("==== Descriptive Statistics by Season ====")
 print(df1.groupby('season')['risk'].mean())
 print(df1.groupby('season')['bat_landing_to_food'].mean())
 print(df2.groupby('month_name')[['rat_arrival_number', 'bat_landing_number']].mean())
 print("==========================================\n")
- 
+
 # --- Seasonal visuals
 plt.figure(figsize=(7,5))
-sns.barplot(x='season', y='risk', data=df1, palette={'Winter':'#1f77b4','Spring':'#ff7f0e'})
+sns.barplot(x='season', y='risk', hue='season', data=df1,
+            palette={'Winter':'#1f77b4','Spring':'#ff7f0e'}, legend=False)
 plt.title("Average Risk-taking Behaviour by Season")
 plt.xlabel("Season (Winter = fewer rats, Spring = more rats)")
 plt.ylabel("Mean Risk-taking (proportion)")
 plt.tight_layout()
 plt.show()
- 
+
 plt.figure(figsize=(7,5))
-sns.boxplot(x='season', y='bat_landing_to_food', data=df1, palette={'Winter':'#66c2a5','Spring':'#fc8d62'})
+sns.boxplot(x='season', y='bat_landing_to_food', hue='season', data=df1,
+            palette={'Winter':'#66c2a5','Spring':'#fc8d62'}, legend=False)
 plt.title("Bat Delay Before Approaching Food by Season")
 plt.xlabel("Season")
 plt.ylabel("Delay Between Landing and Feeding (seconds)")
 plt.tight_layout()
 plt.show()
- 
+
 plt.figure(figsize=(8,5))
-sns.barplot(x='month_name', y='rat_arrival_number', data=df2, palette='coolwarm')
+sns.barplot(x='month_name', y='rat_arrival_number', hue='month_name', data=df2,
+            palette='coolwarm', legend=False)
 plt.title("Average Rat Arrivals per Month")
 plt.xlabel("Month")
 plt.ylabel("Mean Rat Arrivals (per 30 mins)")
 plt.tight_layout()
 plt.show()
- 
+
 plt.figure(figsize=(8,5))
-sns.barplot(x='month_name', y='bat_landing_number', data=df2, palette='viridis')
+sns.barplot(x='month_name', y='bat_landing_number', hue='month_name', data=df2,
+            palette='viridis', legend=False)
 plt.title("Average Bat Landings per Month")
 plt.xlabel("Month")
 plt.ylabel("Mean Bat Landings (per 30 mins)")
 plt.tight_layout()
 plt.show()
- 
 
 # --- Inferential tests
 delay_winter = df1[df1['season']=='Winter']['bat_landing_to_food']
@@ -178,7 +181,7 @@ delay_spring = df1[df1['season']=='Spring']['bat_landing_to_food']
 t_stat, p_val = stats.ttest_ind(delay_winter, delay_spring, equal_var=False)
 print("T-test: Delay to food (Winter vs Spring)")
 print(f"t-statistic: {t_stat:.3f} | p-value: {p_val:.5f}\n")
- 
+
 winter_risk = df1[df1['season']=='Winter']['risk']
 spring_risk = df1[df1['season']=='Spring']['risk']
 count_winter, n_winter = winter_risk.sum(), len(winter_risk)
@@ -192,7 +195,7 @@ print("Spring:", ci_spring, "\n")
 # --- Seasonal regressions (Winter vs Spring)
 plt.figure(figsize=(8,6))
 colors = {'Winter':'#1f77b4', 'Spring':'#ff7f0e'}
- 
+
 for season, color in colors.items():
     if season == 'Winter':
         df_season = df2[df2['month_name'].isin(['Jan','Feb','Mar'])]
@@ -203,7 +206,7 @@ for season, color in colors.items():
     model = LinearRegression().fit(X, y)
     plt.plot(X, model.predict(X), color=color, label=f'{season} Regression Line')
     plt.scatter(X, y, color=color, alpha=0.5, label=f'{season} Observed Data')
- 
+
 plt.title("Linear Regression: Rat Presence vs Bat Landings by Season")
 plt.xlabel("Rat Minutes (Total Rat Presence per 30-min Period)")
 plt.ylabel("Bat Landings (Count per 30-min Period)")
@@ -216,9 +219,13 @@ print("Correlation Between Rat Minutes and Bat Landings (per Month):")
 for m in df2['month_name'].unique():
     subset = df2[df2['month_name'] == m]
     if len(subset) > 2:
-        corr, p = stats.pearsonr(subset['rat_minutes'], subset['bat_landing_number'])
-        print(f"{m}: correlation = {corr:.3f}, p-value = {p:.5f}")
- 
+        # Only calculate correlation if both columns have variation
+        if subset['rat_minutes'].nunique() > 1 and subset['bat_landing_number'].nunique() > 1:
+            corr, p = stats.pearsonr(subset['rat_minutes'], subset['bat_landing_number'])
+            print(f"{m}: correlation = {corr:.3f}, p-value = {p:.5f}")
+        else:
+            print(f"{m}: correlation not defined (one variable is constant)")
+
 # --- Regression performance by season
 winter_df = df2[df2['season']=='Winter']
 spring_df = df2[df2['season']=='Spring']
@@ -236,7 +243,7 @@ rmse_winter = np.sqrt(mean_squared_error(y_winter, y_pred_winter))
 rmse_spring = np.sqrt(mean_squared_error(y_spring, y_pred_spring))
 print(f"\nR² Winter: {r2_winter:.3f} | RMSE Winter: {rmse_winter:.3f}")
 print(f"R² Spring: {r2_spring:.3f} | RMSE Spring: {rmse_spring:.3f}")
- 
+
 # ============================================================
 # FINAL SUMMARY
 # ============================================================
@@ -247,4 +254,3 @@ print("\nInterpretation:")
 print("- Winter months (fewer rats, food scarcity) show more predictable bat landings.")
 print("- Spring months (more rats, abundant food) show increased variability and interaction effects.")
 print("\nAnalysis completed successfully.")
- 
